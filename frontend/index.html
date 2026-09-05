@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Manifest — Decentralized Logistics Escrow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="deck-line"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">◱</span>
+    <div class="brand-text">
+      <span class="brand-name">MANIFEST</span>
+      <span class="brand-sub">Decentralized Escrow &amp; Milestone Logistics</span>
+    </div>
+  </div>
+  <div class="wallet-cluster">
+    <div id="network-pill" class="pill pill-muted">not connected</div>
+    <div id="role-pill" class="pill pill-muted">no role</div>
+    <div id="crp-pill" class="pill pill-crp hidden">CRP: —</div>
+    <button id="connect-btn" class="btn btn-primary">Connect Wallet</button>
+  </div>
+</header>
+
+<nav class="tabbar" id="tabbar">
+  <button class="tab active" data-tab="login">Login</button>
+  <button class="tab" data-tab="dashboard">Dashboard</button>
+  <button class="tab" data-tab="create">New Agreement</button>
+  <button class="tab" data-tab="agreement">Agreement Detail</button>
+  <button class="tab" data-tab="ledger">Transaction Ledger</button>
+  <button class="tab" data-tab="reputation">Reputation Lookup</button>
+  <button class="tab" data-tab="setup">Setup</button>
+</nav>
+
+<div id="network-warning" class="network-warning hidden">
+  <span>⚠ Your wallet is connected to the wrong network. Manifest expects <strong>Sepolia</strong>.</span>
+  <button id="switch-network-btn" class="btn btn-primary btn-small-inline">Switch to Sepolia</button>
+</div>
+
+<main>
+
+  <!-- LOGIN -->
+  <section class="panel active" id="panel-login">
+    <div class="login-hero">
+      <span class="brand-mark login-mark">◱</span>
+      <h2>Welcome to Manifest</h2>
+      <p class="hint">Decentralized escrow for milestone-based logistics agreements. Connect your wallet to continue as a Shipper or Carrier.</p>
+    </div>
+
+    <div class="login-card" id="login-card">
+      <div id="login-step-connect" class="login-step">
+        <p class="login-status-line">You are not connected.</p>
+        <button id="login-connect-btn" class="btn btn-primary btn-wide">Connect Wallet</button>
+      </div>
+
+      <div id="login-step-choose" class="login-step hidden">
+        <p class="login-status-line">Connected as <span id="login-addr" class="mono"></span> — no role yet.</p>
+        <p class="hint">Choose how you'll use the platform. This is a one-time choice per wallet.</p>
+        <div class="btn-row">
+          <button id="login-be-shipper-btn" class="btn btn-secondary login-role-btn">
+            <span class="role-icon">📦</span> Continue as Shipper
+          </button>
+          <button id="login-be-carrier-btn" class="btn btn-secondary login-role-btn">
+            <span class="role-icon">🚚</span> Continue as Carrier
+          </button>
+        </div>
+      </div>
+
+      <div id="login-step-in" class="login-step hidden">
+        <p class="login-status-line">Logged in as <span id="login-role-label" class="status-chip ok"></span></p>
+        <p class="hint mono" id="login-addr-2"></p>
+        <div class="btn-row">
+          <button id="login-goto-dashboard-btn" class="btn btn-primary">Go to Dashboard</button>
+          <button id="logout-btn" class="btn btn-danger">Log Out</button>
+        </div>
+      </div>
+
+      <div id="login-status" class="status-line"></div>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section class="panel" id="panel-setup">
+    <div class="panel-head">
+      <h2>Contract Setup</h2>
+      <p class="hint">Paste the two deployed contract addresses (Remix, Hardhat, or a testnet deployment). This wires the UI to your chain.</p>
+    </div>
+    <div class="form-grid">
+      <label>LogisticsEscrow address
+        <input id="input-escrow-addr" type="text" placeholder="0x..." spellcheck="false" />
+      </label>
+      <label>CarrierReputationToken address
+        <input id="input-token-addr" type="text" placeholder="0x..." spellcheck="false" />
+      </label>
+    </div>
+    <button id="save-config-btn" class="btn btn-primary">Save &amp; Connect Contracts</button>
+    <div id="setup-status" class="status-line"></div>
+
+    <div class="divider"></div>
+    <h3>Register your role</h3>
+    <p class="hint">Every wallet must register once as a Shipper or a Carrier before it can use the platform.</p>
+    <div class="btn-row">
+      <button id="register-shipper-btn" class="btn btn-secondary">Register as Shipper</button>
+      <button id="register-carrier-btn" class="btn btn-secondary">Register as Carrier</button>
+    </div>
+    <div id="register-status" class="status-line"></div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section class="panel" id="panel-dashboard">
+    <div class="panel-head">
+      <h2 id="dashboard-title">All Agreements</h2>
+      <p class="hint" id="dashboard-hint">Every logistics contract created on this deployment, read live from chain state.</p>
+    </div>
+    <div class="btn-row">
+      <button id="refresh-dashboard-btn" class="btn btn-secondary">↻ Refresh</button>
+      <div class="filter-toggle" id="dashboard-filter-toggle">
+        <button class="filter-opt active" data-filter="all">All Agreements</button>
+        <button class="filter-opt" data-filter="mine">My Agreements</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="ledger-table" id="dashboard-table">
+        <thead>
+          <tr>
+            <th>ID</th><th>Shipper</th><th>Carrier</th><th>Total Value</th>
+            <th>Escrowed</th><th>Deadline</th><th>Time Remaining</th><th>Status</th><th></th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="empty-state" id="dashboard-empty">No agreements yet — create the first one under "New Agreement".</p>
+    </div>
+  </section>
+
+  <!-- CREATE AGREEMENT -->
+  <section class="panel" id="panel-create">
+    <div class="panel-head">
+      <h2>Create Logistics Agreement</h2>
+      <p class="hint">Shippers only. Define the payload value, milestone checkpoints, and their payout split.</p>
+    </div>
+    <div class="form-grid">
+      <label>Carrier wallet address
+        <input id="cf-carrier" type="text" placeholder="0x... (must already be registered as Carrier)" spellcheck="false" />
+      </label>
+      <label>Total payload value (ETH)
+        <input id="cf-value" type="number" step="0.0001" min="0" placeholder="e.g. 2.5" />
+      </label>
+      <label>Delivery deadline
+        <input id="cf-deadline" type="datetime-local" />
+      </label>
+    </div>
+
+    <h3>Milestones</h3>
+    <p class="hint">Shares must sum to exactly 100%.</p>
+    <div id="milestone-rows" class="milestone-rows"></div>
+    <button id="add-milestone-btn" class="btn btn-ghost">+ Add milestone</button>
+    <div class="split-total">Total share: <span id="split-total-val">0</span>%</div>
+
+    <button id="create-agreement-btn" class="btn btn-primary btn-wide">Create Agreement</button>
+    <div id="create-status" class="status-line"></div>
+  </section>
+
+  <!-- AGREEMENT DETAIL -->
+  <section class="panel" id="panel-agreement">
+    <div class="panel-head">
+      <h2>Agreement Detail</h2>
+      <p class="hint">Fund, report, verify and release milestone payouts for a single agreement.</p>
+    </div>
+    <div class="form-grid form-grid-inline">
+      <label>Agreement ID
+        <input id="detail-id-input" type="number" min="0" placeholder="0" />
+      </label>
+      <button id="load-agreement-btn" class="btn btn-secondary">Load</button>
+    </div>
+
+    <div id="agreement-card" class="agreement-card hidden">
+      <div class="agreement-summary">
+        <div class="summary-item"><span class="label">Shipper</span><span class="mono" id="d-shipper">—</span></div>
+        <div class="summary-item"><span class="label">Carrier</span><span class="mono" id="d-carrier">—</span></div>
+        <div class="summary-item"><span class="label">Total Value</span><span id="d-total">—</span></div>
+        <div class="summary-item"><span class="label">Escrow Balance</span><span id="d-balance">—</span></div>
+        <div class="summary-item"><span class="label">Deadline</span><span id="d-deadline">—</span></div>
+        <div class="summary-item"><span class="label">Time Remaining</span><span id="d-countdown">—</span></div>
+        <div class="summary-item"><span class="label">Status</span><span class="status-chip" id="d-status">—</span></div>
+      </div>
+
+      <div class="btn-row">
+        <button id="fund-btn" class="btn btn-primary">Fund Agreement</button>
+        <button id="claim-refund-btn" class="btn btn-danger">Claim Refund (post-deadline)</button>
+      </div>
+      <div id="agreement-action-status" class="status-line"></div>
+
+      <h3>Milestones</h3>
+      <div class="table-wrap">
+        <table class="ledger-table">
+          <thead><tr><th>#</th><th>Description</th><th>Share</th><th>Payout</th><th>Reported</th><th>Verified</th><th></th></tr></thead>
+          <tbody id="milestone-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <p class="empty-state" id="agreement-empty">Load an agreement by ID to view its details.</p>
+  </section>
+
+  <!-- LEDGER -->
+  <section class="panel" id="panel-ledger">
+    <div class="panel-head">
+      <h2>Transaction Ledger</h2>
+      <p class="hint">Live on-chain event history — every registration, funding, milestone, and refund, straight from contract logs.</p>
+    </div>
+    <button id="refresh-ledger-btn" class="btn btn-secondary">↻ Refresh Ledger</button>
+    <button id="export-ledger-btn" class="btn btn-secondary">⬇ Export CSV</button>
+    <div class="table-wrap">
+      <table class="ledger-table" id="ledger-table">
+        <thead><tr><th>Block</th><th>Event</th><th>Details</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <p class="empty-state" id="ledger-empty">No events yet.</p>
+    </div>
+  </section>
+
+  <!-- REPUTATION LOOKUP -->
+  <section class="panel" id="panel-reputation">
+    <div class="panel-head">
+      <h2>Carrier Reputation Lookup</h2>
+      <p class="hint">Check any wallet's on-chain CRP reputation score before agreeing to work with them — no need to trust their word.</p>
+    </div>
+    <div class="form-grid form-grid-inline">
+      <label>Wallet address
+        <input id="rep-lookup-input" type="text" placeholder="0x..." spellcheck="false" />
+      </label>
+      <button id="rep-lookup-btn" class="btn btn-secondary">Look Up</button>
+    </div>
+    <div id="rep-lookup-result" class="rep-result hidden">
+      <div class="rep-badge">
+        <span class="rep-badge-value" id="rep-badge-value">0</span>
+        <span class="rep-badge-label">CRP</span>
+      </div>
+      <div class="rep-detail">
+        <p class="rep-detail-addr mono" id="rep-detail-addr"></p>
+        <p class="hint" id="rep-detail-note">This wallet has completed this many verified milestones as a Carrier.</p>
+      </div>
+    </div>
+    <div id="rep-lookup-status" class="status-line"></div>
+  </section>
+
+</main>
+
+<footer>
+  <span>BMIS2003 Blockchain Application Development — Problem 1: Decentralized Escrow &amp; Milestone-Based Logistics Platform</span>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
