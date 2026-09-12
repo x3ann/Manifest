@@ -1,0 +1,13 @@
+{
+  "name": "blockchain-assignment",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BMIS2003 Blockchain Application Development - Manifest",
+  "scripts": {
+    "compile": "node compile.js"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.0",
+    "solc": "0.8.20"
+  }
+}
